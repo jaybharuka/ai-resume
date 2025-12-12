@@ -82,6 +82,7 @@ Bachelor’s degree in Computer Science or relevant field.`);
   const [isExporting, setIsExporting] = useState(false);
   const [generatedBullet, setGeneratedBullet] = useState<string | null>(null);
   const [isGeneratingBullet, setIsGeneratingBullet] = useState(false);
+  const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
   
   // New State for Template Builder
   const [resumeData, setResumeData] = useState<ResumeData | null>(null);
@@ -182,6 +183,8 @@ Bachelor’s degree in Computer Science or relevant field.`);
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+    console.log('handleFileUpload: file selected', file.name, file.type);
+    setUploadedFileName(file.name);
 
     setIsLoading(true);
     setOriginalFileType(file.type);
@@ -189,7 +192,10 @@ Bachelor’s degree in Computer Science or relevant field.`);
     try {
       // 1. Extract Data for Template Builder
       let extractPayload = {};
-      if (file.type === 'application/pdf') {
+      // Sometimes browsers may not provide a mimeType for .docx files; attempt to fallback to file extension
+      const mimeType = file.type || (file.name.endsWith('.pdf') ? 'application/pdf' : file.name.endsWith('.docx') ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' : '');
+
+      if (mimeType === 'application/pdf') {
         const base64 = await fileToBase64(file);
         extractPayload = { base64, mimeType: file.type };
       } else {
@@ -210,6 +216,11 @@ Bachelor’s degree in Computer Science or relevant field.`);
         body: JSON.stringify(extractPayload)
       });
       
+      if (!extractResponse.ok) {
+        const err = await extractResponse.text();
+        throw new Error(`Extract API error ${extractResponse.status}: ${err}`);
+      }
+      
       const extractData = await extractResponse.json();
       if (extractData.success) {
         setResumeData(extractData.data);
@@ -217,20 +228,26 @@ Bachelor’s degree in Computer Science or relevant field.`);
       }
 
       // Legacy PDF handling for Editor Mode
-      if (file.type === 'application/pdf') {
+      if ((file.type || '').includes('pdf') || file.name.endsWith('.pdf')) {
          const base64 = await fileToBase64(file);
          const response = await fetch('/api/parse-pdf', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ base64, mimeType: file.type }),
         });
+        if (!response.ok) {
+            const err = await response.text();
+            throw new Error(`parse-pdf API error ${response.status}: ${err}`);
+        }
         const data = await response.json();
         if (data.success) setEditorContent(data.html);
       }
 
     } catch (error) {
       console.error('Error processing file:', error);
-      alert('Error processing file');
+      const message = error instanceof Error ? error.message : String(error);
+      alert('Error processing file: ' + message);
+      setUploadedFileName(null);
     } finally {
       setIsLoading(false);
     }
@@ -853,6 +870,9 @@ Bachelor’s degree in Computer Science or relevant field.`);
                                         </div>
                                     </div>
                                 </div>
+                                    {uploadedFileName && (
+                                      <div className="mt-2 text-xs text-slate-600">Selected file: <span className="font-medium">{uploadedFileName}</span></div>
+                                    )}
 
                                 <button
                                     onClick={handleTailor}
