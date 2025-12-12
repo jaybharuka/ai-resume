@@ -1,0 +1,22 @@
+
+# Template Thumbnails Directory
+
+Place your template preview images here.
+
+## Naming Convention
+- Use lowercase with hyphens: `modern-1.png`, `classic-2.png`
+- Match the thumbnail path in `/app/api/templates/route.ts`
+
+## Image Specifications
+- **Size**: 400x518px (8.5:11 aspect ratio)
+- **Format**: PNG, JPG, or WebP
+- **File Size**: Keep under 100KB
+- **Resolution**: 2x for Retina displays (800x1036px)
+
+## Creating Thumbnails
+1. Design your resume template
+2. Take a screenshot or export as image
+3. Crop to A4/Letter proportions
+4. Resize to 400x518px
+5. Optimize with TinyPNG or similar
+6. Save here with matching filename
