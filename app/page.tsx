@@ -83,6 +83,9 @@ Bachelor’s degree in Computer Science or relevant field.`);
   const [generatedBullet, setGeneratedBullet] = useState<string | null>(null);
   const [isGeneratingBullet, setIsGeneratingBullet] = useState(false);
   const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
+  const [extractApiStatus, setExtractApiStatus] = useState<string | null>(null);
+  const [parsePdfStatus, setParsePdfStatus] = useState<string | null>(null);
+  const [extractPreview, setExtractPreview] = useState<any>(null);
   
   // New State for Template Builder
   const [resumeData, setResumeData] = useState<ResumeData | null>(null);
@@ -185,6 +188,9 @@ Bachelor’s degree in Computer Science or relevant field.`);
     if (!file) return;
     console.log('handleFileUpload: file selected', file.name, file.type);
     setUploadedFileName(file.name);
+    setExtractApiStatus(null);
+    setParsePdfStatus(null);
+    setExtractPreview(null);
 
     setIsLoading(true);
     setOriginalFileType(file.type);
@@ -193,11 +199,11 @@ Bachelor’s degree in Computer Science or relevant field.`);
       // 1. Extract Data for Template Builder
       let extractPayload = {};
       // Sometimes browsers may not provide a mimeType for .docx files; attempt to fallback to file extension
-      const mimeType = file.type || (file.name.endsWith('.pdf') ? 'application/pdf' : file.name.endsWith('.docx') ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' : '');
+      const mimeType = file.type || (file.name.toLowerCase().endsWith('.pdf') ? 'application/pdf' : file.name.toLowerCase().endsWith('.docx') ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' : '');
 
       if (mimeType === 'application/pdf') {
         const base64 = await fileToBase64(file);
-        extractPayload = { base64, mimeType: file.type };
+        extractPayload = { base64, mimeType };
       } else {
         const arrayBuffer = await file.arrayBuffer();
         setOriginalDocBuffer(arrayBuffer);
@@ -210,12 +216,13 @@ Bachelor’s degree in Computer Science or relevant field.`);
       }
 
       // Call Extraction API
+      setExtractApiStatus('sending');
       const extractResponse = await fetch('/api/extract-data', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(extractPayload)
       });
-      
+      setExtractApiStatus(String(extractResponse.status));
       if (!extractResponse.ok) {
         const err = await extractResponse.text();
         throw new Error(`Extract API error ${extractResponse.status}: ${err}`);
@@ -225,16 +232,18 @@ Bachelor’s degree in Computer Science or relevant field.`);
       if (extractData.success) {
         setResumeData(extractData.data);
         setBuilderMode(true); // Switch to Builder Mode automatically
+        setExtractPreview(extractData.data);
       }
 
       // Legacy PDF handling for Editor Mode
-      if ((file.type || '').includes('pdf') || file.name.endsWith('.pdf')) {
+      if (mimeType.includes('pdf') || file.name.toLowerCase().endsWith('.pdf')) {
          const base64 = await fileToBase64(file);
          const response = await fetch('/api/parse-pdf', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ base64, mimeType: file.type }),
+          body: JSON.stringify({ base64, mimeType }),
         });
+        setParsePdfStatus(String(response.status));
         if (!response.ok) {
             const err = await response.text();
             throw new Error(`parse-pdf API error ${response.status}: ${err}`);
@@ -872,6 +881,18 @@ Bachelor’s degree in Computer Science or relevant field.`);
                                 </div>
                                     {uploadedFileName && (
                                       <div className="mt-2 text-xs text-slate-600">Selected file: <span className="font-medium">{uploadedFileName}</span></div>
+                                    )}
+                                    <div className="mt-2 text-xs text-slate-400">
+                                        <div className="mb-1">Upload Diagnostics</div>
+                                        <div>isLoading: <span className="font-mono">{String(isLoading)}</span></div>
+                                        <div>Extract API: <span className="font-mono">{extractApiStatus || 'idle'}</span></div>
+                                        <div>Parse PDF: <span className="font-mono">{parsePdfStatus || 'idle'}</span></div>
+                                    </div>
+                                    {extractPreview && (
+                                      <div className="mt-3 bg-gray-50 rounded p-2 border border-slate-200 text-xs overflow-auto max-h-40">
+                                        <strong className="text-slate-700">Extract Preview (JSON):</strong>
+                                        <pre className="text-xs mt-2 p-2">{JSON.stringify(extractPreview, null, 2)}</pre>
+                                      </div>
                                     )}
 
                                 <button
