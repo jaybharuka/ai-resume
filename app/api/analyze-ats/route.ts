@@ -6,6 +6,7 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 export async function POST(request: NextRequest) {
   try {
     const { html, jobDescription } = await request.json();
+    console.log('API analyze-ats called', { htmlLength: html ? html.length : 0, jobProvided: !!jobDescription });
 
     if (!html) {
       return NextResponse.json(

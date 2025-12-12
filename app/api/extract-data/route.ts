@@ -6,6 +6,7 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 export async function POST(request: NextRequest) {
   try {
     const { text, base64, mimeType, html } = await request.json();
+    console.log('API extract-data called', { textLength: text ? text.length : 0, base64Length: base64 ? base64.length : 0, mimeType: mimeType || null, hasHtml: Boolean(html) });
 
     if (!text && !base64 && !html) {
       return NextResponse.json(

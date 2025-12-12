@@ -6,6 +6,7 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 export async function POST(request: NextRequest) {
   try {
     const { base64, mimeType } = await request.json();
+    console.log('API parse-pdf called', { base64Length: base64?.length || 0, mimeType });
 
     if (!base64) {
       return NextResponse.json(
