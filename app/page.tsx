@@ -15,11 +15,14 @@ import ResumePreview from '@/components/ResumePreview';
 import Sidebar from '@/components/Sidebar';
 import Dashboard from '@/components/Dashboard';
 import TemplateSelector from '@/components/TemplateSelector';
+import PrintableResume from '@/components/PrintableResume';
 import { TemplateName } from '@/components/templates';
 import { ResumeData } from '@/types/resume';
 import { Layout, Save, Palette } from 'lucide-react';
 import { saveResume } from '@/lib/actions/resume';
 import { SignInButton, SignUpButton, SignedIn, SignedOut, UserButton } from '@clerk/nextjs';
+import { useResumeStore } from '@/lib/stores/resumeStore';
+import { useReactToPrint } from 'react-to-print';
 
 const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
 
@@ -88,11 +91,33 @@ Bachelor’s degree in Computer Science or relevant field.`);
   const [extractPreview, setExtractPreview] = useState<any>(null);
   
   // New State for Template Builder
-  const [resumeData, setResumeData] = useState<ResumeData | null>(null);
   const [activeTemplate, setActiveTemplate] = useState<TemplateName>('modern');
   const [showTemplateSelector, setShowTemplateSelector] = useState(false);
   const [builderMode, setBuilderMode] = useState(false); // Toggle between Editor and Builder
   const [accentColor, setAccentColor] = useState('#3b82f6');
+
+  // Resume Store
+  const { resumeData, setResumeData, updateResumeData } = useResumeStore();
+
+  // Print functionality
+  const printRef = React.useRef<HTMLDivElement>(null);
+  const handlePrint = useReactToPrint({
+    contentRef: printRef,
+    documentTitle: 'Resume',
+    pageStyle: `
+      @page {
+        margin: 1in;
+        size: A4;
+      }
+      @media print {
+        body {
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+          color-adjust: exact;
+        }
+      }
+    `,
+  });
 
   // Auto-scale logic for Resume Builder
   const containerRef = React.useRef<HTMLDivElement>(null);
@@ -473,36 +498,22 @@ Bachelor’s degree in Computer Science or relevant field.`);
   };
 
   const handleDownloadPDF = async () => {
-    // Identify the content to print
-    let element: HTMLElement | null = null;
-    
-    if (builderMode && resumeData) {
-      element = document.getElementById('resume-preview-container');
-    } else {
-      // Legacy Editor Mode
-      // Use the .print-only container which has the clean HTML
-      element = document.querySelector('.print-only') as HTMLElement;
-    }
-
-    if (!element) {
-      alert('Content to print not found');
+    if (!resumeData) {
+      alert('No resume data available. Please create or load a resume first.');
       return;
     }
 
-    // Add class for print styling
-    // Remove from any previous elements first
-    document.querySelectorAll('.printable-content').forEach(el => el.classList.remove('printable-content'));
-    element.classList.add('printable-content');
-
-    // Trigger print
-    window.print();
-
-    // Cleanup (optional, but keeps DOM clean)
-    // We can leave it, or remove it after a delay. 
-    // Leaving it is fine as it only affects @media print.
-    
-    setShowExportModal(false);
-    setIsExporting(false);
+    setIsExporting(true);
+    try {
+      // Use react-to-print for perfect PDF export
+      handlePrint();
+    } catch (error) {
+      console.error('PDF export failed:', error);
+      alert('Failed to export PDF');
+    } finally {
+      setIsExporting(false);
+      setShowExportModal(false);
+    }
   };
 
   const handleSave = async () => {
@@ -520,71 +531,32 @@ Bachelor’s degree in Computer Science or relevant field.`);
   };
 
   const handleExportDOCX = async () => {
-    if (builderMode) {
-      alert('DOCX export is currently only available in Editor mode. Please switch to Editor mode or export as PDF for the best result.');
+    if (!resumeData) {
+      alert('No resume data available. Please create or load a resume first.');
       return;
     }
 
     setIsExporting(true);
     try {
-      // Check if we can do High-Fidelity Export
-      if (originalDocBuffer && originalFileType !== 'application/pdf') {
-        // High-Fidelity Patching
-        const zip = new PizZip(originalDocBuffer);
-        const docFile = zip.file('word/document.xml');
-        if (docFile) {
-            // const doc = new DOMParser().parseFromString(docFile.asText(), 'text/xml');
-            // Logic would go here
-        }
-        
-        // Get clean text from editor
-        let newHtml = editorContent;
-        if (viewMode === 'review' && tailoredContent) {
-          newHtml = cleanHtml(tailoredContent);
-        }
-        
-        const response = await fetch('/api/export-docx', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ html: newHtml })
-        });
+      const response = await fetch('/api/export-docx', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          resumeData,
+          templateName: activeTemplate
+        })
+      });
 
-        if (!response.ok) throw new Error('Export failed');
+      if (!response.ok) throw new Error('Export failed');
 
-        const blob = await response.blob();
-        saveAs(blob, 'resume_tailored.docx');
-        
-      } else {
-        // Fallback or PDF case
-        if (originalFileType === 'application/pdf') {
-           if (!confirm('For exact layout preservation, please upload a .DOCX file. PDF exports will use a generated layout. Continue?')) {
-             setIsExporting(false);
-             return;
-           }
-        }
-        
-        // Get content
-        let content = editorContent;
-        if (viewMode === 'review' && tailoredContent) {
-          content = cleanHtml(tailoredContent);
-        }
-
-        const response = await fetch('/api/export-docx', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ html: content })
-        });
-
-        if (!response.ok) throw new Error('Export failed');
-
-        const blob = await response.blob();
-        saveAs(blob, 'resume.docx');
-      }
+      const blob = await response.blob();
+      saveAs(blob, 'resume.docx');
     } catch (error) {
       console.error('Export DOCX failed:', error);
       alert('Failed to export DOCX');
     } finally {
       setIsExporting(false);
+      setShowExportModal(false);
     }
   };
 
@@ -729,7 +701,10 @@ Bachelor’s degree in Computer Science or relevant field.`);
                                     templateName={activeTemplate} 
                                     colorAccent={accentColor}
                                     isEditing={!isExporting}
-                                    onUpdate={setResumeData}
+                                    onUpdate={(updatedData) => {
+                                      setResumeData(updatedData);
+                                      updateResumeData(updatedData);
+                                    }}
                                     scale={scale}
                                 />
                             </div>
@@ -987,6 +962,18 @@ Bachelor’s degree in Computer Science or relevant field.`);
             <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
             <span className="text-sm font-medium text-gray-700">Generating suggestion...</span>
           </div>
+        </div>
+      )}
+
+      {/* Hidden Printable Resume for PDF Export */}
+      {resumeData && (
+        <div className="hidden">
+          <PrintableResume
+            ref={printRef}
+            data={resumeData}
+            templateName={activeTemplate}
+            colorAccent={accentColor}
+          />
         </div>
       )}
     </>

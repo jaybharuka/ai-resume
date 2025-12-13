@@ -37,7 +37,7 @@ export default function TechTemplate({ data, colorAccent, isEditing, onUpdate }:
             </div>
             <div className="mb-1">
               <span className="text-[#9cdcfe]">role: </span>
-              <span className="text-[#ce9178]">"Full Stack Developer"</span>,
+              <span className="text-[#ce9178]">&quot;Full Stack Developer&quot;</span>,
             </div>
             <div className="mb-1">
               <span className="text-[#9cdcfe]">location: </span>
@@ -55,7 +55,7 @@ export default function TechTemplate({ data, colorAccent, isEditing, onUpdate }:
 
         {/* Contact */}
         <div>
-          <h3 className="text-[#569cd6] font-bold mb-3 uppercase tracking-wider text-xs">// Contact</h3>
+          <h3 className="text-[#569cd6] font-bold mb-3 uppercase tracking-wider text-xs">{'// Contact'}</h3>
           <div className="space-y-2 text-xs">
             <div className="flex items-center gap-2">
               <span className="text-[#6a9955]">#</span>
@@ -84,7 +84,7 @@ export default function TechTemplate({ data, colorAccent, isEditing, onUpdate }:
         {(data.skills?.length || 0) > 0 && (
           <div className="group/section break-inside-avoid">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-[#569cd6] font-bold uppercase tracking-wider text-xs">// Skills</h3>
+              <h3 className="text-[#569cd6] font-bold uppercase tracking-wider text-xs">{'// Skills'}</h3>
               <SectionControls onDelete={() => update(d => d.skills = [])} isEditing={isEditing} />
             </div>
             <div className="flex flex-wrap gap-2">
@@ -113,7 +113,7 @@ export default function TechTemplate({ data, colorAccent, isEditing, onUpdate }:
         {(data.education?.length || 0) > 0 && (
           <div className="group/section break-inside-avoid">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-[#569cd6] font-bold uppercase tracking-wider text-xs">// Education</h3>
+              <h3 className="text-[#569cd6] font-bold uppercase tracking-wider text-xs">{'// Education'}</h3>
               <SectionControls onDelete={() => update(d => d.education = [])} isEditing={isEditing} />
             </div>
             <div className="space-y-4">
@@ -169,14 +169,15 @@ export default function TechTemplate({ data, colorAccent, isEditing, onUpdate }:
                       <Editable tagName="h3" className="text-[#dcdcaa] font-bold" value={exp.role} onChange={(val) => update(d => d.experience[i].role = val)} isEditing={isEditing} />
                     </div>
                     <div className="text-xs text-[#808080]">
-                      // <Editable value={exp.startDate} onChange={(val) => update(d => d.experience[i].startDate = val)} isEditing={isEditing} /> - <Editable value={exp.endDate} onChange={(val) => update(d => d.experience[i].endDate = val)} isEditing={isEditing} />
+                      <span className="text-[#808080]">{'// '}</span>
+                      <Editable value={exp.startDate} onChange={(val) => update(d => d.experience[i].startDate = val)} isEditing={isEditing} /> - <Editable value={exp.endDate} onChange={(val) => update(d => d.experience[i].endDate = val)} isEditing={isEditing} />
                     </div>
                   </div>
                   <div className="text-[#4ec9b0] text-sm mb-2">
                     @<Editable value={exp.company} onChange={(val) => update(d => d.experience[i].company = val)} isEditing={isEditing} />
                   </div>
                   
-                  <div className="text-[#808080] text-xs mb-1">/** Achievements */</div>
+                  <div className="text-[#808080] text-xs mb-1">{'/** Achievements */'}</div>
                   <ul className="space-y-1 text-[#d4d4d4] text-xs font-light">
                     {exp.bullets.map((bullet, j) => (
                       <li key={j} className="relative group/bullet flex gap-2">
@@ -225,19 +226,18 @@ export default function TechTemplate({ data, colorAccent, isEditing, onUpdate }:
                   </div>
                   
                   <div className="ml-4 mb-2">
-                    <span className="text-[#9cdcfe]">desc:</span> <span className="text-[#ce9178]">"</span>
+                    <span className="text-[#9cdcfe]">desc:</span> <span className="text-[#ce9178]">&quot;</span>
                     <Editable tagName="span" className="text-[#ce9178] text-xs" value={proj.description} onChange={(val) => update(d => d.projects![i].description = val)} isEditing={isEditing} />
-                    <span className="text-[#ce9178]">"</span><span className="text-[#d4d4d4]">,</span>
+                    <span className="text-[#ce9178]">&quot;</span><span className="text-[#d4d4d4]">,</span>
                   </div>
 
-                  <div className="ml-4 flex flex-wrap gap-1 items-center">
+                  <div className="ml-4 flex flex-wrap items-center">
                     <span className="text-[#9cdcfe]">stack:</span> <span className="text-[#da70d6]">[</span>
                     {(proj.technologies || []).map((tech, ti) => (
-                      <div key={ti} className="relative group/tech inline-flex items-center">
-                        <span className="text-[#ce9178]">"</span>
-                        <Editable className="text-[#ce9178] text-xs" value={tech} onChange={(val) => update(d => d.projects![i].technologies![ti] = val)} isEditing={isEditing} />
-                        <span className="text-[#ce9178]">"</span>
-                        {ti < (proj.technologies?.length || 0) - 1 && <span className="text-[#d4d4d4] mr-1">,</span>}
+                      <span key={ti} className="relative group/tech">
+                        <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-md text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200 mr-2 mb-2 whitespace-nowrap leading-none">
+                          <Editable className="bg-transparent text-slate-700 text-xs font-medium p-0 m-0 focus:outline-none" value={tech} onChange={(val) => update(d => d.projects![i].technologies![ti] = val)} isEditing={isEditing} />
+                        </span>
                         {isEditing && (
                           <button 
                             onClick={() => update(d => d.projects![i].technologies!.splice(ti, 1))}
@@ -246,7 +246,7 @@ export default function TechTemplate({ data, colorAccent, isEditing, onUpdate }:
                             <X size={8} />
                           </button>
                         )}
-                      </div>
+                      </span>
                     ))}
                     <AddButton onClick={() => update(d => { if(!d.projects![i].technologies) d.projects![i].technologies=[]; d.projects![i].technologies!.push("Tech") })} label="+" className="text-[#808080] hover:text-white" isEditing={isEditing} />
                     <span className="text-[#da70d6]">]</span>

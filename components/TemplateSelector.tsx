@@ -13,8 +13,11 @@ export default function TemplateSelector({ isOpen, onClose, currentTemplate, onS
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl max-h-[85vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Backdrop */}
+      <div onClick={onClose} className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-6xl max-h-[85vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 md:rounded-l-3xl md:w-[540px] md:h-[calc(100vh-4rem)] md:ml-auto md:mr-0">
         <div className="p-6 border-b flex justify-between items-center bg-white z-10">
           <div>
             <h2 className="text-2xl font-bold text-gray-900">Choose a Template</h2>
