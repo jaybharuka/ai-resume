@@ -6,7 +6,7 @@ import { Sliders, FileText, Code2, Shield, Scale, Zap, File, Files, Download, Fi
 import { useSettingsStore, AIStrictness, ResumeLength, DefaultEditor, ExportFormat } from '@/lib/stores/settingsStore';
 import { useResumeStore } from '@/lib/stores/resumeStore';
 
-const TOUR_DISMISSED_KEY = 'ai-resume-tour-dismissed';
+const TOUR_DISMISSED_KEY = 'resumex-tour-dismissed';
 
 // Radio option component for cleaner code
 interface RadioOptionProps {
@@ -129,7 +129,7 @@ export default function SettingsPage() {
             </div>
             <h1 className="text-2xl font-bold text-slate-900">Settings</h1>
           </div>
-          <p className="text-slate-500">Customize how AI Resume works for you.</p>
+          <p className="text-slate-500">Customize how Resumex works for you.</p>
         </div>
 
         {/* Settings Sections */}

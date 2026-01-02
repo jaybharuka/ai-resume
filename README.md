@@ -1,4 +1,4 @@
-# AI Resume Builder
+# Resumex
 
 An AI-powered resume workspace built with Next.js 14. Create professional LaTeX resumes, tailor them for job descriptions, and get ATS optimization — all in one place.
 

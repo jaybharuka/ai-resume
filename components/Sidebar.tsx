@@ -34,7 +34,7 @@ export default function Sidebar() {
       <div className={`p-4 flex items-center ${isSidebarCollapsed ? 'justify-center' : 'justify-between'}`}>
         {!isSidebarCollapsed && (
           <h1 className="text-xl font-bold tracking-tight text-white whitespace-nowrap overflow-hidden">
-            AI Resume
+            Resumex
           </h1>
         )}
         <button 

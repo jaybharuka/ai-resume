@@ -7,8 +7,8 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "AI Resume Tailor - Optimize Your Resume for Any Job",
-  description: "AI-powered resume tailoring platform that optimizes resumes for specific job descriptions with ATS scoring and intelligent suggestions.",
+  title: "Resumex - AI-Powered Resume Builder",
+  description: "AI-powered resume builder that helps you create, tailor, and optimize resumes for any job with ATS scoring and intelligent suggestions.",
   keywords: "resume, AI, ATS, job application, career, software engineer, resume optimizer",
 };
 

@@ -5,7 +5,7 @@ import { useUser } from '@clerk/nextjs';
 import Link from 'next/link';
 import { useUIStore } from '@/lib/stores/uiStore';
 
-const TOUR_DISMISSED_KEY = 'ai-resume-tour-dismissed';
+const TOUR_DISMISSED_KEY = 'resumex-tour-dismissed';
 
 // Tour step configuration
 const TOUR_STEPS = [
@@ -267,7 +267,7 @@ export default function Dashboard({ onEdit, onCreate }: DashboardProps) {
         >
           <div className="mb-4">
             <h2 className="text-lg font-semibold text-slate-800">Getting Started</h2>
-            <p className="text-sm text-slate-500 mt-0.5">Quick ways to use AI Resume</p>
+            <p className="text-sm text-slate-500 mt-0.5">Quick ways to use Resumex</p>
           </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
