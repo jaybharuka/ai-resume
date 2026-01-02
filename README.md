@@ -1,6 +1,6 @@
-# AI Resume Tailor
+# AI Resume Builder
 
-A powerful, AI-powered resume builder and tailoring application built with Next.js 14. Create professional LaTeX-rendered resumes, tailor them for specific job descriptions, and export to multiple formats.
+An AI-powered resume workspace built with Next.js 14. Create professional LaTeX resumes, tailor them for job descriptions, and get ATS optimization — all in one place.
 
 ![Next.js](https://img.shields.io/badge/Next.js-14-black?style=flat-square&logo=next.js)
 ![React](https://img.shields.io/badge/React-18.3-blue?style=flat-square&logo=react)
@@ -9,295 +9,142 @@ A powerful, AI-powered resume builder and tailoring application built with Next.
 
 ## ✨ Features
 
-### 📝 Dual Editor Mode
-- **Code Editor**: Full Monaco editor for direct LaTeX editing with syntax highlighting
-- **Visual Editor**: User-friendly form-based editor for non-technical users
-- Seamless switching between modes with automatic data synchronization
+### 🏠 Dashboard
+- **Quick Tour**: Interactive 3-step onboarding for new users
+- **Getting Started Cards**: Easy access to create resume, upload existing, or open LaTeX workspace
+- **Recent Resumes**: Quick access to your saved resumes with timestamps
+
+### 📝 Resume Editor
+- **Visual Builder**: Form-based editor with real-time preview
+- **Resume Templates**: Multiple professional templates to choose from
+- **Job Description Input**: Paste JD and get AI-powered tailoring suggestions
+- **ATS Score Analysis**: See how well your resume matches the job description
+
+### 🎨 LaTeX Pro Workspace
+- **Code Editor**: Full Monaco editor with LaTeX syntax highlighting
+- **Visual Editor**: User-friendly form-based editing (light theme)
+- **Real-time PDF Preview**: Instant compilation with Tectonic
+- **AI Assistant**: Tailor sections, improve content, optimize for ATS
+- **Section Preview**: Preview AI changes before applying
 
 ### 🤖 AI-Powered Features
-- **Section Tailoring**: Rewrite resume sections to match job descriptions
+- **Resume Tailoring**: Rewrite sections to match job descriptions
 - **ATS Optimization**: Optimize content for Applicant Tracking Systems
-- **AI Summary Generation**: Generate professional summaries based on your experience
-- **Content Improvement**: Enhance clarity and impact of your bullet points
-- **Plain Text Preview**: Review AI suggestions in readable format before applying
+- **Summary Generation**: Generate professional summaries
+- **Content Improvement**: Enhance clarity and impact of bullet points
 
-### 📄 LaTeX Resume Generation
-- Real-time PDF preview with Tectonic compiler
-- Multiple professional LaTeX templates
-- Section-by-section editing and preview
-- Automatic LaTeX escaping and formatting
+### ⚙️ Settings
+- **AI Preferences**: Control AI strictness level (Conservative, Balanced, Creative)
+- **Resume Layout**: Set preferred resume length (1 page, 2 pages, auto)
+- **Editor Preferences**: Choose default editor (Visual or Code)
+- **Export Settings**: Set default export format (PDF, LaTeX, DOCX)
+- **Danger Zone**: Clear all saved data and restart fresh
 
 ### 📤 Export Options
-- **PDF**: High-quality LaTeX-rendered PDF output
-- **LaTeX Source**: Download `.tex` file for further editing
-- **DOCX**: Microsoft Word format (coming soon)
-
-### 📥 Import Support
-- Upload existing PDF resumes
-- Upload DOCX files
-- Automatic data extraction using AI
+- PDF (high-quality LaTeX-rendered)
+- LaTeX source (.tex file)
+- DOCX (Microsoft Word)
 
 ## 🛠️ Tech Stack
 
-### Frontend
-- **Framework**: Next.js 14 (App Router)
-- **UI Library**: React 18.3
-- **Styling**: Tailwind CSS with custom components
-- **State Management**: Zustand
-- **Code Editor**: Monaco Editor
-- **PDF Viewing**: react-pdf with PDF.js
-- **Icons**: Lucide React
-- **UI Components**: Radix UI primitives
+| Category | Technologies |
+|----------|-------------|
+| **Framework** | Next.js 14 (App Router) |
+| **UI** | React 18.3, Tailwind CSS, Radix UI |
+| **State** | Zustand with localStorage persistence |
+| **Editor** | Monaco Editor |
+| **PDF** | Tectonic compiler, react-pdf |
+| **AI** | Google Gemini, Anthropic Claude |
+| **Icons** | Lucide React |
 
-### Backend
-- **Runtime**: Node.js with Next.js API Routes
-- **LaTeX Compiler**: Tectonic (bundled binary)
-- **AI Integration**: 
-  - Google Gemini (gemini-2.0-flash-exp)
-  - Anthropic Claude
-- **PDF Parsing**: pdf-to-png-converter, pdfjs-dist
-- **Document Processing**: mammoth (DOCX), docx (export)
+## 🚀 Getting Started
 
-### Development
-- **Language**: TypeScript
-- **Linting**: ESLint
-- **CSS Processing**: PostCSS, Autoprefixer
+### Prerequisites
+- Node.js 18+
+- npm or yarn
+- Google Gemini API key
+
+### Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/jaybharuka/ai-resume.git
+cd ai-resume
+
+# Install dependencies
+npm install
+
+# Set up environment variables
+cp .env.example .env.local
+```
+
+Edit `.env.local` with your API keys:
+```env
+GEMINI_API_KEY="your-gemini-api-key"
+CLAUDE_API_KEY="your-claude-api-key"  # Optional
+```
+
+### Run the App
+
+```bash
+npm run dev
+```
+
+Open [http://localhost:3004](http://localhost:3004)
 
 ## 📁 Project Structure
 
 ```
 ai-resume/
-├── app/                          # Next.js App Router
-│   ├── api/                      # API Routes
-│   │   ├── ai-action/            # AI-powered actions
-│   │   ├── analyze-ats/          # ATS score analysis
-│   │   ├── compile-latex/        # LaTeX compilation
-│   │   ├── convert-to-latex/     # Plain text to LaTeX
-│   │   ├── extract-data/         # Resume data extraction
-│   │   ├── generate-latex/       # LaTeX generation
-│   │   ├── generate-summary/     # AI summary generation
-│   │   ├── preview-section/      # Section preview (plain text)
-│   │   └── ...
-│   ├── latex/                    # LaTeX workspace page
-│   └── page.tsx                  # Home page
+├── app/
+│   ├── api/                 # API routes for AI, compilation, etc.
+│   ├── create-resume/       # Create new resume flow
+│   ├── latex/               # LaTeX Pro workspace
+│   ├── settings/            # Settings page
+│   └── page.tsx             # Main editor page
 ├── components/
-│   ├── latex/                    # LaTeX workspace components
-│   │   ├── visual/               # Visual editor components
-│   │   │   └── VisualEditor.tsx  # Form-based resume editor
-│   │   ├── LatexEditor.tsx       # Monaco code editor
-│   │   ├── LatexPreview.tsx      # PDF preview component
-│   │   ├── LatexTools.tsx        # Tools panel
-│   │   └── SectionPreviewModal.tsx # AI preview modal
-│   └── templates/                # Resume templates
+│   ├── latex/               # LaTeX workspace components
+│   │   └── visual/          # Visual editor components
+│   ├── templates/           # Resume template components
+│   ├── Dashboard.tsx        # Main dashboard
+│   ├── Sidebar.tsx          # Navigation sidebar
+│   └── GlobalLayout.tsx     # App layout wrapper
 ├── lib/
-│   ├── latex/                    # LaTeX utilities
-│   │   ├── flexibleGenerator.ts  # LaTeX code generation
-│   │   ├── latexAdapter.ts       # JSON ↔ LaTeX conversion
-│   │   ├── sectionParser.ts      # Section extraction/replacement
-│   │   └── templates/            # LaTeX templates
-│   └── stores/                   # Zustand stores
-│       └── resumeStore.ts        # Global resume state
-├── types/
-│   └── resume.ts                 # TypeScript interfaces
+│   ├── latex/               # LaTeX utilities & templates
+│   ├── stores/              # Zustand state stores
+│   └── resume/              # Resume utilities
 ├── bin/
-│   └── tectonic.exe              # LaTeX compiler binary
-└── public/                       # Static assets
+│   └── tectonic.exe         # LaTeX compiler
+└── types/
+    └── resume.ts            # TypeScript interfaces
 ```
-
-## 🚀 Getting Started
-
-### Prerequisites
-- Node.js 18+ 
-- npm or yarn
-- Google Gemini API key (for AI features)
-- Claude API key (optional, for advanced AI)
-
-### Installation
-
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/yourusername/ai-resume.git
-   cd ai-resume
-   ```
-
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
-
-3. **Set up environment variables**
-   ```bash
-   cp .env.example .env.local
-   ```
-   
-   Edit `.env.local` and add your API keys:
-   ```env
-   GEMINI_API_KEY="your-gemini-api-key"
-   CLAUDE_API_KEY="your-claude-api-key"
-   ```
-
-4. **Run the development server**
-   ```bash
-   npm run dev
-   ```
-
-5. **Open the app**
-   Navigate to [http://localhost:3004](http://localhost:3004)
-
-## 📖 Usage Guide
-
-### Creating a New Resume
-
-1. **Upload Existing Resume**: 
-   - Click "Upload Resume" and select a PDF or DOCX file
-   - AI will extract all data automatically
-
-2. **Start from Scratch**:
-   - Use the Visual Editor to fill in your information
-   - Switch to Code Editor for advanced LaTeX editing
-
-### Using AI Section Tailoring
-
-1. **Enter Job Description**: Paste the target job description in the tools panel
-2. **Select Section**: Choose which section to tailor (Experience, Skills, etc.)
-3. **Choose Action**:
-   - **Rewrite for JD**: Align content with job requirements
-   - **Improve Clarity**: Enhance readability
-   - **Optimize for ATS**: Add relevant keywords
-   - **Shorten**: Condense content
-4. **Preview Changes**: Review AI suggestions in plain text
-5. **Apply Changes**: Click "Apply" to update LaTeX and recompile PDF
-
-### Editing Modes
-
-#### Visual Editor
-- Form-based interface for easy editing
-- Collapsible sections for each resume part
-- Add/remove items with click of a button
-- Undo functionality for all changes
-
-#### Code Editor
-- Full Monaco editor with LaTeX syntax highlighting
-- Direct control over LaTeX source
-- Auto-compilation on changes
-- Outline panel for quick navigation
 
 ## 🔧 API Endpoints
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/compile-latex` | POST | Compile LaTeX to PDF |
-| `/api/extract-data` | POST | Extract data from uploaded resume |
-| `/api/generate-latex` | POST | Generate LaTeX from JSON data |
-| `/api/preview-section` | POST | Get AI-improved section (plain text) |
-| `/api/convert-to-latex` | POST | Convert plain text to LaTeX |
-| `/api/generate-summary` | POST | Generate AI professional summary |
-| `/api/analyze-ats` | POST | Analyze ATS compatibility |
+| Endpoint | Description |
+|----------|-------------|
+| `/api/compile-latex` | Compile LaTeX to PDF |
+| `/api/generate-latex` | Generate LaTeX from JSON |
+| `/api/tailor-resume` | AI-powered resume tailoring |
+| `/api/preview-section` | Preview AI changes |
+| `/api/generate-summary` | Generate AI summary |
+| `/api/analyze-ats` | ATS score analysis |
+| `/api/extract-data` | Extract data from uploaded resume |
 
-## 🎨 Resume Data Structure
-
-```typescript
-interface ResumeData {
-  personalInfo: {
-    name: string;
-    email: string;
-    phone: string;
-    linkedin?: string;
-    github?: string;
-    website?: string;
-    location?: string;
-  };
-  summary?: string;
-  experience?: Array<{
-    company: string;
-    title: string;
-    startDate: string;
-    endDate: string;
-    location?: string;
-    bullets: string[];
-  }>;
-  education?: Array<{
-    institution: string;
-    degree: string;
-    graduationDate?: string;
-    gpa?: string;
-    honors?: string;
-  }>;
-  skills?: string[];
-  projects?: Array<{
-    name: string;
-    description: string;
-    technologies?: string[];
-    url?: string;
-  }>;
-  certifications?: Array<{
-    name: string;
-    issuer?: string;
-    date?: string;
-  }>;
-  awards?: Array<{ title: string; issuer?: string; date?: string }>;
-  languages?: string[];
-  customSections?: Array<{
-    title: string;
-    content?: string;
-    items?: string[];
-  }>;
-}
-```
-
-## 🔒 Environment Variables
-
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `GEMINI_API_KEY` | Yes | Google Gemini API key for AI features |
-| `CLAUDE_API_KEY` | No | Anthropic Claude API key |
-| `DATABASE_URL` | No | PostgreSQL connection string |
-| `NEXTAUTH_SECRET` | No | NextAuth.js secret |
-
-## 📜 Scripts
+## 🐳 Docker
 
 ```bash
-# Development
-npm run dev          # Start dev server on port 3004
-
-# Production
-npm run build        # Build for production
-npm run start        # Start production server
-
-# Code Quality
-npm run lint         # Run ESLint
-```
-
-## 🐳 Docker Support
-
-```bash
-# Build image
+# Build the image
 docker build -t ai-resume .
 
-# Run container
+# Run the container
 docker run -p 3004:3004 ai-resume
 ```
 
-## 🤝 Contributing
+## 📄 License
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit changes (`git commit -m 'Add amazing feature'`)
-4. Push to branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## 📝 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- [Tectonic](https://tectonic-typesetting.github.io/) - LaTeX compiler
-- [Monaco Editor](https://microsoft.github.io/monaco-editor/) - Code editor
-- [Google Gemini](https://ai.google.dev/) - AI capabilities
-- [Radix UI](https://www.radix-ui.com/) - UI primitives
-- [Lucide](https://lucide.dev/) - Icons
+MIT License - feel free to use this project for personal or commercial purposes.
 
 ---
 
-Built with ❤️ using Next.js and AI
+Built with ❤️ using Next.js, React, and AI
