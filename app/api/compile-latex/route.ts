@@ -9,7 +9,10 @@ const execAsync = promisify(exec);
 const writeFileAsync = promisify(fs.writeFile);
 const readFileAsync = promisify(fs.readFile);
 
-// Helper to find executable
+// Check if running on Vercel (serverless)
+const IS_VERCEL = process.env.VERCEL === '1';
+
+// Helper to find executable (local development only)
 async function getCommand(): Promise<string> {
   // 1. Check for local Tectonic binary in project bin folder (Best for this project)
   const localTectonic = path.join(process.cwd(), 'bin', 'tectonic.exe');
@@ -38,7 +41,41 @@ async function getCommand(): Promise<string> {
   }
 }
 
+// Compile using external LaTeX Online API (for Vercel deployment)
+async function compileWithLatexOnline(latexCode: string): Promise<{ pdf: string; logs: string }> {
+  const response = await fetch('https://latexonline.cc/compile', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: new URLSearchParams({
+      text: latexCode,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`LaTeX compilation failed: ${errorText}`);
+  }
+
+  const pdfBuffer = await response.arrayBuffer();
+  const pdfBase64 = Buffer.from(pdfBuffer).toString('base64');
+  
+  return {
+    pdf: pdfBase64,
+    logs: 'Compiled using LaTeX Online service'
+  };
+}
+
 export async function GET() {
+  if (IS_VERCEL) {
+    return NextResponse.json({ 
+      status: 'ok', 
+      version: 'LaTeX Online (Cloud)', 
+      compiler: 'latexonline.cc' 
+    });
+  }
+  
   try {
     const cmd = await getCommand();
     const { stdout } = await execAsync(`${cmd} --version`);
@@ -58,6 +95,24 @@ export async function POST(req: NextRequest) {
 
     if (!latexCode) {
       return NextResponse.json({ error: 'No LaTeX code provided' }, { status: 400 });
+    }
+
+    // Use external API on Vercel, local compiler otherwise
+    if (IS_VERCEL) {
+      try {
+        const result = await compileWithLatexOnline(latexCode);
+        return NextResponse.json({
+          success: true,
+          pdf: result.pdf,
+          logs: result.logs
+        });
+      } catch (error: any) {
+        return NextResponse.json({ 
+          error: 'Compilation failed', 
+          details: error.message 
+        }, { status: 400 });
+      }
+    }
     }
 
     // Resolve compiler command

@@ -1,0 +1,9 @@
+# Ignore for Vercel deployment
+bin/
+*.exe
+.env
+.env.local
+node_modules/
+.next/
+uploads/
+*.log
