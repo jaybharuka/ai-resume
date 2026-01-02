@@ -147,4 +147,4 @@ MIT License - feel free to use this project for personal or commercial purposes.
 
 ---
 
-Built with ❤️ using Next.js, React, and AI
+Built with ❤️ using Next.js
