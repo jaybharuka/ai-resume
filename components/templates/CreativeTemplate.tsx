@@ -1,8 +1,16 @@
 import React from 'react';
 import { TemplateProps } from './types';
-import { ResumeData } from '@/types/resume';
+import { ResumeData, Award } from '@/types/resume';
 import { Editable, AddButton, RemoveButton, SectionControls, AddSectionButton, CustomSectionRenderer } from './TemplateComponents';
 import { X } from 'lucide-react';
+
+// Helper to normalize award (string | Award) to Award object
+const normalizeAward = (award: string | Award): Award => {
+  if (typeof award === 'string') {
+    return { title: award, issuer: '', date: '' };
+  }
+  return award;
+};
 
 export default function CreativeTemplate({ data, colorAccent, isEditing, onUpdate }: TemplateProps) {
   const update = (fn: (d: ResumeData) => void) => {
@@ -16,7 +24,7 @@ export default function CreativeTemplate({ data, colorAccent, isEditing, onUpdat
   const emptyProject = { name: "Project Name", technologies: ["Tech"], description: "Project description", link: "" };
   const emptyEducation = { school: "University Name", degree: "Degree", year: "Year", gpa: "" };
   const emptyCertification = { name: "Certification Name", issuer: "Issuer", date: "Date" };
-  const emptyAward = { title: "Award Title", issuer: "Issuer", date: "Date" };
+  const emptyAward: Award = { title: "Award Title", issuer: "Issuer", date: "Date" };
 
   return (
     <div className="w-full h-full bg-white font-sans flex flex-col">
@@ -81,29 +89,29 @@ export default function CreativeTemplate({ data, colorAccent, isEditing, onUpdat
                 <SectionControls onDelete={() => update(d => d.experience = [])} isEditing={isEditing} />
               </div>
               <div className="space-y-8 border-l-2 border-gray-100 pl-6 ml-2">
-                {data.experience.map((exp, i) => (
+                {(data.experience || []).map((exp, i) => (
                   <div key={i} className="relative group break-inside-avoid">
                     {/* Timeline Dot */}
                     <div className="absolute -left-[31px] top-1.5 w-4 h-4 rounded-full border-2 border-white shadow-sm" style={{ backgroundColor: colorAccent }}></div>
                     
                     <div className="mb-2">
-                      <Editable tagName="h3" className="text-xl font-bold text-gray-800" value={exp.role} onChange={(val) => update(d => d.experience[i].role = val)} isEditing={isEditing} />
+                      <Editable tagName="h3" className="text-xl font-bold text-gray-800" value={exp.role || exp.title} onChange={(val) => update(d => { if(d.experience) d.experience[i].role = val })} isEditing={isEditing} />
                       <div className="flex justify-between items-center mt-1">
-                        <Editable className="text-lg font-medium text-gray-600" value={exp.company} onChange={(val) => update(d => d.experience[i].company = val)} isEditing={isEditing} />
+                        <Editable className="text-lg font-medium text-gray-600" value={exp.company} onChange={(val) => update(d => { if(d.experience) d.experience[i].company = val })} isEditing={isEditing} />
                         <div className="text-sm font-bold px-3 py-1 rounded-full bg-gray-100 text-gray-600">
-                          <Editable value={exp.startDate} onChange={(val) => update(d => d.experience[i].startDate = val)} isEditing={isEditing} /> - <Editable value={exp.endDate} onChange={(val) => update(d => d.experience[i].endDate = val)} isEditing={isEditing} />
+                          <Editable value={exp.startDate} onChange={(val) => update(d => { if(d.experience) d.experience[i].startDate = val })} isEditing={isEditing} /> - <Editable value={exp.endDate} onChange={(val) => update(d => { if(d.experience) d.experience[i].endDate = val })} isEditing={isEditing} />
                         </div>
                       </div>
                     </div>
                     
                     <ul className="space-y-2 text-gray-600 mt-3">
-                      {exp.bullets.map((bullet, j) => (
+                      {(exp.bullets || []).map((bullet, j) => (
                         <li key={j} className="relative group/bullet pl-4">
                           <span className="absolute left-0 top-2 w-1.5 h-1.5 rounded-full bg-gray-300"></span>
-                          <Editable value={bullet} onChange={(val) => update(d => d.experience[i].bullets[j] = val)} isEditing={isEditing} />
+                          <Editable value={bullet} onChange={(val) => update(d => { if(d.experience) d.experience[i].bullets[j] = val })} isEditing={isEditing} />
                           {isEditing && (
                             <button 
-                              onClick={() => update(d => d.experience[i].bullets.splice(j, 1))}
+                              onClick={() => update(d => { if(d.experience) d.experience[i].bullets.splice(j, 1) })}
                               className="absolute -left-6 top-0 text-red-300 hover:text-red-500 opacity-0 group-hover/bullet:opacity-100"
                             >
                               <X size={10} />
@@ -111,16 +119,16 @@ export default function CreativeTemplate({ data, colorAccent, isEditing, onUpdat
                           )}
                         </li>
                       ))}
-                      <AddButton onClick={() => update(d => d.experience[i].bullets.push("New achievement"))} label="Add Bullet" isEditing={isEditing} />
+                      <AddButton onClick={() => update(d => { if(d.experience) d.experience[i].bullets.push("New achievement") })} label="Add Bullet" isEditing={isEditing} />
                     </ul>
-                    <RemoveButton onClick={() => update(d => d.experience.splice(i, 1))} isEditing={isEditing} />
+                    <RemoveButton onClick={() => update(d => { if(d.experience) d.experience.splice(i, 1) })} isEditing={isEditing} />
                   </div>
                 ))}
-                <AddButton onClick={() => update(d => d.experience.push(emptyExperience))} label="Add Experience" isEditing={isEditing} />
+                <AddButton onClick={() => update(d => { if(d.experience) d.experience.push(emptyExperience) })} label="Add Experience" isEditing={isEditing} />
               </div>
             </section>
           )}
-          {(!data.experience.length) && <AddSectionButton label="Experience" onClick={() => update(d => d.experience = [emptyExperience])} isEditing={isEditing} />}
+          {!(data.experience?.length) && <AddSectionButton label="Experience" onClick={() => update(d => d.experience = [emptyExperience])} isEditing={isEditing} />}
 
           {/* Projects */}
           {(data.projects?.length || 0) > 0 && (
@@ -193,17 +201,17 @@ export default function CreativeTemplate({ data, colorAccent, isEditing, onUpdat
                 <SectionControls onDelete={() => update(d => d.skills = [])} isEditing={isEditing} />
               </div>
               <div className="flex flex-wrap gap-2">
-                {data.skills.map((skill, i) => (
+                {(data.skills || []).map((skill, i) => (
                   <div key={i} className="relative group">
                     <span 
                       className="px-3 py-1.5 rounded-full text-sm font-medium text-white shadow-sm block transition-transform hover:scale-105"
                       style={{ backgroundColor: colorAccent }}
                     >
-                      <Editable value={skill} onChange={(val) => update(d => d.skills[i] = val)} isEditing={isEditing} />
+                      <Editable value={skill} onChange={(val) => update(d => d.skills![i] = val)} isEditing={isEditing} />
                     </span>
                     {isEditing && (
                       <button 
-                        onClick={() => update(d => d.skills.splice(i, 1))}
+                        onClick={() => update(d => d.skills!.splice(i, 1))}
                         className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity w-3 h-3 flex items-center justify-center"
                       >
                         <X size={8} />
@@ -211,11 +219,11 @@ export default function CreativeTemplate({ data, colorAccent, isEditing, onUpdat
                     )}
                   </div>
                 ))}
-                <AddButton onClick={() => update(d => d.skills.push("New Skill"))} label="Add" isEditing={isEditing} />
+                <AddButton onClick={() => update(d => { if(!d.skills) d.skills=[]; d.skills.push("New Skill") })} label="Add" isEditing={isEditing} />
               </div>
             </section>
           )}
-          {(!data.skills.length) && <AddSectionButton label="Skills" onClick={() => update(d => d.skills = ["New Skill"])} isEditing={isEditing} />}
+          {(!data.skills?.length) && <AddSectionButton label="Skills" onClick={() => update(d => d.skills = ["New Skill"])} isEditing={isEditing} />}
 
           {/* Education */}
           {(data.education?.length || 0) > 0 && (
@@ -225,22 +233,22 @@ export default function CreativeTemplate({ data, colorAccent, isEditing, onUpdat
                 <SectionControls onDelete={() => update(d => d.education = [])} isEditing={isEditing} />
               </div>
               <div className="space-y-6">
-                {data.education.map((edu, i) => (
+                {(data.education || []).map((edu, i) => (
                   <div key={i} className="relative group break-inside-avoid">
-                    <Editable tagName="div" className="font-bold text-gray-800" value={edu.school} onChange={(val) => update(d => d.education[i].school = val)} isEditing={isEditing} />
-                    <Editable tagName="div" className="text-sm text-gray-600 mb-1" value={edu.degree} onChange={(val) => update(d => d.education[i].degree = val)} isEditing={isEditing} />
+                    <Editable tagName="div" className="font-bold text-gray-800" value={edu.school} onChange={(val) => update(d => d.education![i].school = val)} isEditing={isEditing} />
+                    <Editable tagName="div" className="text-sm text-gray-600 mb-1" value={edu.degree} onChange={(val) => update(d => d.education![i].degree = val)} isEditing={isEditing} />
                     <div className="flex justify-between text-xs font-medium text-gray-400">
-                      <Editable value={edu.year} onChange={(val) => update(d => d.education[i].year = val)} isEditing={isEditing} />
-                      {edu.gpa && <Editable value={edu.gpa} onChange={(val) => update(d => d.education[i].gpa = val)} placeholder="GPA" isEditing={isEditing} />}
+                      <Editable value={edu.year} onChange={(val) => update(d => d.education![i].year = val)} isEditing={isEditing} />
+                      {edu.gpa && <Editable value={edu.gpa} onChange={(val) => update(d => d.education![i].gpa = val)} placeholder="GPA" isEditing={isEditing} />}
                     </div>
-                    <RemoveButton onClick={() => update(d => d.education.splice(i, 1))} isEditing={isEditing} />
+                    <RemoveButton onClick={() => update(d => d.education!.splice(i, 1))} isEditing={isEditing} />
                   </div>
                 ))}
-                <AddButton onClick={() => update(d => d.education.push(emptyEducation))} label="Add Education" isEditing={isEditing} />
+                <AddButton onClick={() => update(d => { if(!d.education) d.education=[]; d.education.push(emptyEducation) })} label="Add Education" isEditing={isEditing} />
               </div>
             </section>
           )}
-          {(!data.education.length) && <AddSectionButton label="Education" onClick={() => update(d => d.education = [emptyEducation])} isEditing={isEditing} />}
+          {(!data.education?.length) && <AddSectionButton label="Education" onClick={() => update(d => d.education = [emptyEducation])} isEditing={isEditing} />}
 
           {/* Awards */}
           {(data.awards?.length || 0) > 0 && (
@@ -250,15 +258,18 @@ export default function CreativeTemplate({ data, colorAccent, isEditing, onUpdat
                 <SectionControls onDelete={() => update(d => d.awards = [])} isEditing={isEditing} />
               </div>
               <div className="space-y-4">
-                {(data.awards || []).map((award, i) => (
-                  <div key={i} className="relative group border-l-2 pl-3 break-inside-avoid" style={{ borderColor: colorAccent }}>
-                    <Editable tagName="h3" className="font-bold text-sm text-gray-800" value={award.title} onChange={(val) => update(d => d.awards![i].title = val)} isEditing={isEditing} />
-                    <div className="text-xs text-gray-500 mt-1">
-                      <Editable value={award.issuer} onChange={(val) => update(d => d.awards![i].issuer = val)} isEditing={isEditing} /> • <Editable value={award.date} onChange={(val) => update(d => d.awards![i].date = val)} isEditing={isEditing} />
+                {(data.awards || []).map((rawAward, i) => {
+                  const award = normalizeAward(rawAward);
+                  return (
+                    <div key={i} className="relative group border-l-2 pl-3 break-inside-avoid" style={{ borderColor: colorAccent }}>
+                      <Editable tagName="h3" className="font-bold text-sm text-gray-800" value={award.title} onChange={(val) => update(d => { const a = normalizeAward(d.awards![i]); a.title = val; d.awards![i] = a; })} isEditing={isEditing} />
+                      <div className="text-xs text-gray-500 mt-1">
+                        <Editable value={award.issuer || ''} onChange={(val) => update(d => { const a = normalizeAward(d.awards![i]); a.issuer = val; d.awards![i] = a; })} isEditing={isEditing} /> • <Editable value={award.date || ''} onChange={(val) => update(d => { const a = normalizeAward(d.awards![i]); a.date = val; d.awards![i] = a; })} isEditing={isEditing} />
+                      </div>
+                      <RemoveButton onClick={() => update(d => d.awards!.splice(i, 1))} isEditing={isEditing} />
                     </div>
-                    <RemoveButton onClick={() => update(d => d.awards!.splice(i, 1))} isEditing={isEditing} />
-                  </div>
-                ))}
+                  );
+                })}
                 <AddButton onClick={() => update(d => { if(!d.awards) d.awards=[]; d.awards.push(emptyAward) })} label="Add Award" isEditing={isEditing} />
               </div>
             </section>

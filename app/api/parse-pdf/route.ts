@@ -1,10 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
-
 export async function POST(request: NextRequest) {
   try {
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+    if (!process.env.GEMINI_API_KEY) {
+      console.error('GEMINI_API_KEY is not set in environment variables');
+      return NextResponse.json(
+        { error: 'Server configuration error: API key missing' },
+        { status: 500 }
+      );
+    }
+
     const { base64, mimeType } = await request.json();
     console.log('API parse-pdf called', { base64Length: base64?.length || 0, mimeType });
 

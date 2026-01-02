@@ -12,7 +12,6 @@ import './editor.css';
 import ATSScoreCard from '@/components/ATSScoreCard';
 import ExportModal from '@/components/ExportModal';
 import ResumePreview from '@/components/ResumePreview';
-import Sidebar from '@/components/Sidebar';
 import Dashboard from '@/components/Dashboard';
 import TemplateSelector from '@/components/TemplateSelector';
 import PrintableResume from '@/components/PrintableResume';
@@ -22,6 +21,7 @@ import { Layout, Save, Palette } from 'lucide-react';
 import { saveResume } from '@/lib/actions/resume';
 import { SignInButton, SignUpButton, SignedIn, SignedOut, UserButton } from '@clerk/nextjs';
 import { useResumeStore } from '@/lib/stores/resumeStore';
+import { useUIStore } from '@/lib/stores/uiStore';
 import { useReactToPrint } from 'react-to-print';
 
 const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
@@ -33,50 +33,10 @@ export default function VisualEditorPage() {
   const [originalFileType, setOriginalFileType] = useState<string>('');
   const [viewMode, setViewMode] = useState<'edit' | 'review'>('edit');
   const [showJdPanel, setShowJdPanel] = useState(true);
-  const [activeTab, setActiveTab] = useState<'editor' | 'dashboard' | 'templates' | 'settings'>('editor');
+  const { activeTab, setActiveTab } = useUIStore();
   const [rightPanelTab, setRightPanelTab] = useState<'jd' | 'analysis'>('jd');
   const [isSaving, setIsSaving] = useState(false);
-  const [jobDescription, setJobDescription] = useState<string>(`Job Title: Senior Full Stack Engineer (React/Node.js) Company: TechNova Solutions Location: Remote / Hybrid (San Francisco, CA)
-
-About the Role: We are looking for a highly skilled Full Stack Engineer to join our product team. You will be responsible for building scalable web applications and optimizing our current infrastructure. The ideal candidate is passionate about clean code, UI/UX design, and cloud technologies.
-
-Key Responsibilities:
-
-Design and develop high-performance user interfaces using React.js and Next.js.
-
-Build and maintain robust backend APIs using Node.js and Express.
-
-Collaborate with cross-functional teams to define, design, and ship new features.
-
-Ensure the technical feasibility of UI/UX designs.
-
-Optimize applications for maximum speed and scalability.
-
-Implement security best practices and data protection measures.
-
-Technical Requirements (Hard Skills):
-
-Frontend: Expert proficiency in JavaScript (ES6+), TypeScript, React, Redux, and Tailwind CSS.
-
-Backend: Strong experience with Node.js, Python, or Go.
-
-Database: Experience with MongoDB (NoSQL) and PostgreSQL.
-
-DevOps & Tools: Familiarity with AWS (EC2, S3, Lambda), Docker, Kubernetes, and CI/CD pipelines (GitHub Actions).
-
-Testing: Experience with testing frameworks like Jest or Cypress.
-
-Soft Skills & Qualifications:
-
-Strong problem-solving skills and attention to detail.
-
-Excellent communication skills and ability to work in an Agile environment.
-
-Proven track record of leadership or mentoring junior developers.
-
-Ability to manage multiple project timelines effectively.
-
-Bachelor’s degree in Computer Science or relevant field.`);
+  const [jobDescription, setJobDescription] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [isTailoring, setIsTailoring] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -97,7 +57,7 @@ Bachelor’s degree in Computer Science or relevant field.`);
   const [accentColor, setAccentColor] = useState('#3b82f6');
 
   // Resume Store
-  const { resumeData, setResumeData, updateResumeData } = useResumeStore();
+  const { resumeData, setResumeData, updateResumeData, setOriginalData, revertToOriginal, originalData } = useResumeStore();
 
   // Print functionality
   const printRef = React.useRef<HTMLDivElement>(null);
@@ -106,7 +66,7 @@ Bachelor’s degree in Computer Science or relevant field.`);
     documentTitle: 'Resume',
     pageStyle: `
       @page {
-        margin: 1in;
+        margin: 0mm;
         size: A4;
       }
       @media print {
@@ -211,6 +171,12 @@ Bachelor’s degree in Computer Science or relevant field.`);
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+    
+    if (file.size > 4 * 1024 * 1024) {
+      alert("File is too large. Please upload a file smaller than 4MB.");
+      return;
+    }
+
     console.log('handleFileUpload: file selected', file.name, file.type);
     setUploadedFileName(file.name);
     setExtractApiStatus(null);
@@ -225,39 +191,62 @@ Bachelor’s degree in Computer Science or relevant field.`);
       let extractPayload = {};
       // Sometimes browsers may not provide a mimeType for .docx files; attempt to fallback to file extension
       const mimeType = file.type || (file.name.toLowerCase().endsWith('.pdf') ? 'application/pdf' : file.name.toLowerCase().endsWith('.docx') ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' : '');
+      
+      console.log('Detected mimeType:', mimeType);
 
       if (mimeType === 'application/pdf') {
         const base64 = await fileToBase64(file);
         extractPayload = { base64, mimeType };
-      } else {
+      } else if (mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || file.name.toLowerCase().endsWith('.docx')) {
         const arrayBuffer = await file.arrayBuffer();
         setOriginalDocBuffer(arrayBuffer);
-        const result = await mammoth.extractRawText({ arrayBuffer });
-        extractPayload = { text: result.value };
-        
-        // Also get HTML for the old editor (legacy support)
-        const htmlResult = await mammoth.convertToHtml({ arrayBuffer });
-        setEditorContent(htmlResult.value);
+        try {
+            const result = await mammoth.extractRawText({ arrayBuffer });
+            extractPayload = { text: result.value };
+            
+            // Also get HTML for the old editor (legacy support)
+            const htmlResult = await mammoth.convertToHtml({ arrayBuffer });
+            setEditorContent(htmlResult.value);
+        } catch (mammothError) {
+            console.error('Mammoth extraction error:', mammothError);
+            throw new Error('Failed to extract text from DOCX file. Please ensure it is a valid Word document.');
+        }
+      } else {
+        throw new Error('Unsupported file type. Please upload a PDF or DOCX file.');
       }
 
       // Call Extraction API
       setExtractApiStatus('sending');
-      const extractResponse = await fetch('/api/extract-data', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(extractPayload)
-      });
+      let extractResponse;
+      try {
+        extractResponse = await fetch('/api/extract-data', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(extractPayload)
+        });
+      } catch (networkError) {
+        throw new Error('Network error: Failed to reach the server. Please ensure the server is running.');
+      }
+
       setExtractApiStatus(String(extractResponse.status));
+      
       if (!extractResponse.ok) {
-        const err = await extractResponse.text();
-        throw new Error(`Extract API error ${extractResponse.status}: ${err}`);
+        const errText = await extractResponse.text();
+        throw new Error(`Server responded with ${extractResponse.status}: ${errText}`);
       }
       
       const extractData = await extractResponse.json();
+      console.log('Extract Data Response:', extractData);
+
       if (extractData.success) {
         setResumeData(extractData.data);
+        setOriginalData(extractData.data);
         setBuilderMode(true); // Switch to Builder Mode automatically
         setExtractPreview(extractData.data);
+      } else {
+        console.error('Extraction failed:', extractData.error);
+        alert(`Failed to parse resume data: ${extractData.error || 'Unknown error'}`);
+        // We don't return here, we let it try to load the editor content at least
       }
 
       // Legacy PDF handling for Editor Mode
@@ -293,31 +282,54 @@ Bachelor’s degree in Computer Science or relevant field.`);
       return;
     }
     
-    if (!editorContent) {
+    if (!resumeData && !editorContent) {
       alert('Please upload a resume first');
       return;
     }
 
     setIsTailoring(true);
     try {
-      const response = await fetch('/api/tailor-html', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          html: editorContent,
-          jobDescription: jobDescription,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (data.success && data.tailoredHtml) {
-        setTailoredContent(data.tailoredHtml);
-        setViewMode('review');
+      if (builderMode && resumeData) {
+        // New JSON Tailoring for Builder Mode
+        const response = await fetch('/api/tailor-resume', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            resumeData,
+            jobDescription
+          })
+        });
+        
+        const data = await response.json();
+        if (data.success && data.tailoredData) {
+           setResumeData(data.tailoredData);
+           updateResumeData(data.tailoredData); // Sync with store
+           // Optional: Show a toast or notification instead of alert
+           // alert("Resume tailored successfully!"); 
+        } else {
+           throw new Error(data.error || 'Failed to tailor resume');
+        }
       } else {
-        throw new Error(data.error || 'Failed to tailor resume');
+        // Legacy HTML Tailoring
+        const response = await fetch('/api/tailor-html', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            html: editorContent,
+            jobDescription: jobDescription,
+          }),
+        });
+
+        const data = await response.json();
+
+        if (data.success && data.tailoredHtml) {
+          setTailoredContent(data.tailoredHtml);
+          setViewMode('review');
+        } else {
+          throw new Error(data.error || 'Failed to tailor resume');
+        }
       }
     } catch (error) {
       console.error('Error tailoring resume:', error);
@@ -467,11 +479,16 @@ Bachelor’s degree in Computer Science or relevant field.`);
             return;
         }
 
-        const response = await fetch('/api/extract-data', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text })
-        });
+        let response;
+        try {
+          response = await fetch('/api/extract-data', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text })
+          });
+        } catch (networkError) {
+          throw new Error('Network error: Failed to reach the server. Please ensure the server is running.');
+        }
         
         if (!response.ok) {
             const errorText = await response.text();
@@ -560,6 +577,11 @@ Bachelor’s degree in Computer Science or relevant field.`);
     }
   };
 
+  const handleExportLaTeX = async () => {
+    // Redirect to the new LaTeX Workspace
+    window.location.href = '/latex';
+  };
+
   return (
     <>
       <TemplateSelector 
@@ -573,12 +595,10 @@ Bachelor’s degree in Computer Science or relevant field.`);
         onClose={() => setShowExportModal(false)}
         onExportPDF={handleDownloadPDF}
         onExportDOCX={handleExportDOCX}
+        onExportLaTeX={handleExportLaTeX}
         isExporting={isExporting}
       />
-      <div className="flex h-screen bg-slate-50 font-sans text-slate-900 overflow-hidden">
-        <Sidebar activeTab={activeTab} onTabChange={(tab) => setActiveTab(tab as any)} />
-        
-        <main className="flex-1 flex flex-col h-screen overflow-hidden relative transition-all duration-300">
+      <div className="flex flex-col h-full overflow-hidden relative transition-all duration-300">
             {/* Top Navigation / Header */}
             <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 shrink-0 z-20">
                 <div className="flex items-center gap-4">
@@ -872,17 +892,34 @@ Bachelor’s degree in Computer Science or relevant field.`);
 
                                 <button
                                     onClick={handleTailor}
-                                    disabled={isTailoring || !editorContent}
+                                    disabled={isTailoring || (!editorContent && !resumeData)}
                                     className="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-slate-900/20 transition-all transform active:scale-[0.98]"
                                 >
                                     {isTailoring ? (
                                         <>
-                                            <span className="animate-spin">⟳</span> Scanning...
+                                            <span className="animate-spin">⟳</span> Tailoring...
                                         </>
                                     ) : (
-                                        'Scan for Match'
+                                        'Tailor to Job'
                                     )}
                                 </button>
+                                
+                                {originalData && resumeData && JSON.stringify(originalData) !== JSON.stringify(resumeData) && (
+                                    <button
+                                        onClick={() => {
+                                            if (confirm('Are you sure you want to revert to the original resume? All tailoring will be lost.')) {
+                                                revertToOriginal();
+                                            }
+                                        }}
+                                        className="w-full mt-2 py-2 bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 rounded-lg font-medium text-sm transition-colors flex items-center justify-center gap-2"
+                                    >
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                                            <path d="M3 3v5h5"/>
+                                        </svg>
+                                        Revert to Original
+                                    </button>
+                                )}
                             </div>
                         ) : (
                             <ATSScoreCard 
@@ -895,7 +932,6 @@ Bachelor’s degree in Computer Science or relevant field.`);
                     </div>
                 </div>
             </div>
-      </main>
       </div>
 
       {/* Print Template - Hidden on screen, visible on print */}

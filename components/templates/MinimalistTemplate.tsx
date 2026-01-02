@@ -1,8 +1,16 @@
 import React from 'react';
 import { TemplateProps } from './types';
-import { ResumeData } from '@/types/resume';
+import { ResumeData, Award } from '@/types/resume';
 import { Editable, AddButton, RemoveButton, SectionControls, AddSectionButton, CustomSectionRenderer } from './TemplateComponents';
 import { X } from 'lucide-react';
+
+// Helper to normalize award (string | Award) to Award object
+const normalizeAward = (award: string | Award): Award => {
+  if (typeof award === 'string') {
+    return { title: award, issuer: '', date: '' };
+  }
+  return award;
+};
 
 export default function MinimalistTemplate({ data, colorAccent, isEditing, onUpdate }: TemplateProps) {
   const update = (fn: (d: ResumeData) => void) => {
@@ -16,7 +24,7 @@ export default function MinimalistTemplate({ data, colorAccent, isEditing, onUpd
   const emptyProject = { name: "Project Name", technologies: ["Tech"], description: "Project description", link: "" };
   const emptyEducation = { school: "University Name", degree: "Degree", year: "Year", gpa: "" };
   const emptyCertification = { name: "Certification Name", issuer: "Issuer", date: "Date" };
-  const emptyAward = { title: "Award Title", issuer: "Issuer", date: "Date" };
+  const emptyAward: Award = { title: "Award Title", issuer: "Issuer", date: "Date" };
 
   return (
     <div 
@@ -68,25 +76,25 @@ export default function MinimalistTemplate({ data, colorAccent, isEditing, onUpd
           <SectionControls onDelete={() => update(d => d.experience = [])} isEditing={isEditing} />
         </div>
         <div className="space-y-6">
-          {data.experience.map((exp, i) => (
+          {(data.experience || []).map((exp, i) => (
             <div key={i} className="relative group break-inside-avoid">
               <div className="flex justify-between items-baseline mb-1">
-                <Editable tagName="h3" className="font-bold text-lg" value={exp.company} onChange={(val) => update(d => d.experience[i].company = val)} isEditing={isEditing} />
+                <Editable tagName="h3" className="font-bold text-lg" value={exp.company} onChange={(val) => update(d => d.experience![i].company = val)} isEditing={isEditing} />
                 <div className="text-sm italic">
-                  <Editable value={exp.startDate} onChange={(val) => update(d => d.experience[i].startDate = val)} isEditing={isEditing} /> — <Editable value={exp.endDate} onChange={(val) => update(d => d.experience[i].endDate = val)} isEditing={isEditing} />
+                  <Editable value={exp.startDate} onChange={(val) => update(d => d.experience![i].startDate = val)} isEditing={isEditing} /> — <Editable value={exp.endDate} onChange={(val) => update(d => d.experience![i].endDate = val)} isEditing={isEditing} />
                 </div>
               </div>
               <div className="flex justify-between text-gray-700 italic mb-2">
-                <Editable value={exp.role} onChange={(val) => update(d => d.experience[i].role = val)} isEditing={isEditing} />
-                <Editable className="text-xs not-italic" value={exp.location} onChange={(val) => update(d => d.experience[i].location = val)} placeholder="Location" isEditing={isEditing} />
+                <Editable value={exp.role} onChange={(val) => update(d => d.experience![i].role = val)} isEditing={isEditing} />
+                <Editable className="text-xs not-italic" value={exp.location} onChange={(val) => update(d => d.experience![i].location = val)} placeholder="Location" isEditing={isEditing} />
               </div>
               <ul className="list-disc list-outside ml-5 space-y-1 text-gray-700">
-                {exp.bullets.map((bullet, j) => (
+                {(exp.bullets || []).map((bullet, j) => (
                   <li key={j} className="pl-1 relative group/bullet">
-                    <Editable value={bullet} onChange={(val) => update(d => d.experience[i].bullets[j] = val)} isEditing={isEditing} />
+                    <Editable value={bullet} onChange={(val) => update(d => d.experience![i].bullets[j] = val)} isEditing={isEditing} />
                     {isEditing && (
                       <button 
-                        onClick={() => update(d => d.experience[i].bullets.splice(j, 1))}
+                        onClick={() => update(d => d.experience![i].bullets.splice(j, 1))}
                         className="absolute -left-5 top-1 text-red-300 hover:text-red-500 opacity-0 group-hover/bullet:opacity-100"
                       >
                         <X size={10} />
@@ -94,16 +102,16 @@ export default function MinimalistTemplate({ data, colorAccent, isEditing, onUpd
                     )}
                   </li>
                 ))}
-                <AddButton onClick={() => update(d => d.experience[i].bullets.push("New achievement"))} label="Add Bullet" isEditing={isEditing} />
+                <AddButton onClick={() => update(d => d.experience![i].bullets.push("New achievement"))} label="Add Bullet" isEditing={isEditing} />
               </ul>
-              <RemoveButton onClick={() => update(d => d.experience.splice(i, 1))} isEditing={isEditing} />
+              <RemoveButton onClick={() => update(d => d.experience!.splice(i, 1))} isEditing={isEditing} />
             </div>
           ))}
-          <AddButton onClick={() => update(d => d.experience.push(emptyExperience))} label="Add Experience" isEditing={isEditing} />
+          <AddButton onClick={() => update(d => { if(!d.experience) d.experience=[]; d.experience.push(emptyExperience) })} label="Add Experience" isEditing={isEditing} />
         </div>
       </section>
       )}
-      {(!data.experience.length) && <AddSectionButton label="Experience" onClick={() => update(d => d.experience = [emptyExperience])} isEditing={isEditing} />}
+      {(!data.experience?.length) && <AddSectionButton label="Experience" onClick={() => update(d => d.experience = [emptyExperience])} isEditing={isEditing} />}
 
       {/* Projects */}
       {(data.projects?.length || 0) > 0 && (
@@ -157,26 +165,26 @@ export default function MinimalistTemplate({ data, colorAccent, isEditing, onUpd
           <SectionControls onDelete={() => update(d => d.education = [])} isEditing={isEditing} />
         </div>
         <div className="space-y-4">
-          {data.education.map((edu, i) => (
+          {(data.education || []).map((edu, i) => (
             <div key={i} className="relative group flex justify-between break-inside-avoid">
               <div>
-                <Editable tagName="div" className="font-bold" value={edu.school} onChange={(val) => update(d => d.education[i].school = val)} isEditing={isEditing} />
-                <Editable tagName="div" value={edu.degree} onChange={(val) => update(d => d.education[i].degree = val)} isEditing={isEditing} />
+                <Editable tagName="div" className="font-bold" value={edu.school} onChange={(val) => update(d => d.education![i].school = val)} isEditing={isEditing} />
+                <Editable tagName="div" value={edu.degree} onChange={(val) => update(d => d.education![i].degree = val)} isEditing={isEditing} />
                 <div className="text-sm text-gray-500 flex gap-1">
-                  GPA: <Editable value={edu.gpa} onChange={(val) => update(d => d.education[i].gpa = val)} placeholder="..." isEditing={isEditing} />
+                  GPA: <Editable value={edu.gpa} onChange={(val) => update(d => d.education![i].gpa = val)} placeholder="..." isEditing={isEditing} />
                 </div>
               </div>
               <div className="text-sm">
-                <Editable value={edu.year} onChange={(val) => update(d => d.education[i].year = val)} isEditing={isEditing} />
+                <Editable value={edu.year} onChange={(val) => update(d => d.education![i].year = val)} isEditing={isEditing} />
               </div>
-              <RemoveButton onClick={() => update(d => d.education.splice(i, 1))} isEditing={isEditing} />
+              <RemoveButton onClick={() => update(d => d.education!.splice(i, 1))} isEditing={isEditing} />
             </div>
           ))}
-          <AddButton onClick={() => update(d => d.education.push(emptyEducation))} label="Add Education" isEditing={isEditing} />
+          <AddButton onClick={() => update(d => { if(!d.education) d.education=[]; d.education.push(emptyEducation) })} label="Add Education" isEditing={isEditing} />
         </div>
       </section>
       )}
-      {(!data.education.length) && <AddSectionButton label="Education" onClick={() => update(d => d.education = [emptyEducation])} isEditing={isEditing} />}
+      {(!data.education?.length) && <AddSectionButton label="Education" onClick={() => update(d => d.education = [emptyEducation])} isEditing={isEditing} />}
 
       {/* Certifications */}
       {(data.certifications?.length || 0) > 0 && (
@@ -213,13 +221,13 @@ export default function MinimalistTemplate({ data, colorAccent, isEditing, onUpd
           <SectionControls onDelete={() => update(d => d.skills = [])} isEditing={isEditing} />
         </div>
         <div className="flex flex-wrap gap-2 leading-relaxed text-gray-700">
-          {data.skills.map((skill, i) => (
+          {(data.skills || []).map((skill, i) => (
             <div key={i} className="relative group inline-block">
-              <Editable value={skill} onChange={(val) => update(d => d.skills[i] = val)} isEditing={isEditing} />
-              {i < data.skills.length - 1 && <span className="mx-1.5 text-gray-300">|</span>}
+              <Editable value={skill} onChange={(val) => update(d => d.skills![i] = val)} isEditing={isEditing} />
+              {i < (data.skills?.length || 0) - 1 && <span className="mx-1.5 text-gray-300">|</span>}
               {isEditing && (
                 <button 
-                  onClick={() => update(d => d.skills.splice(i, 1))}
+                  onClick={() => update(d => d.skills!.splice(i, 1))}
                   className="absolute -top-2 -right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity w-3 h-3 flex items-center justify-center"
                 >
                   <X size={8} />
@@ -227,11 +235,11 @@ export default function MinimalistTemplate({ data, colorAccent, isEditing, onUpd
               )}
             </div>
           ))}
-          <AddButton onClick={() => update(d => d.skills.push("New Skill"))} label="+" isEditing={isEditing} />
+          <AddButton onClick={() => update(d => { if(!d.skills) d.skills=[]; d.skills.push("New Skill") })} label="+" isEditing={isEditing} />
         </div>
       </section>
       )}
-      {(!data.skills.length) && <AddSectionButton label="Skills" onClick={() => update(d => d.skills = ["New Skill"])} isEditing={isEditing} />}
+      {(!data.skills?.length) && <AddSectionButton label="Skills" onClick={() => update(d => d.skills = ["New Skill"])} isEditing={isEditing} />}
 
       {/* Awards */}
       {(data.awards?.length || 0) > 0 && (
@@ -241,19 +249,22 @@ export default function MinimalistTemplate({ data, colorAccent, isEditing, onUpd
             <SectionControls onDelete={() => update(d => d.awards = [])} isEditing={isEditing} />
           </div>
           <div className="space-y-2">
-            {(data.awards || []).map((award, i) => (
-              <div key={i} className="relative group flex justify-between break-inside-avoid">
-                <div className="flex gap-2">
-                  <Editable tagName="span" className="font-bold" value={award.title} onChange={(val) => update(d => d.awards![i].title = val)} isEditing={isEditing} />
-                  <span className="text-gray-400">|</span>
-                  <Editable tagName="span" className="text-gray-600" value={award.issuer} onChange={(val) => update(d => d.awards![i].issuer = val)} isEditing={isEditing} />
+            {(data.awards || []).map((rawAward, i) => {
+              const award = normalizeAward(rawAward);
+              return (
+                <div key={i} className="relative group flex justify-between break-inside-avoid">
+                  <div className="flex gap-2">
+                    <Editable tagName="span" className="font-bold" value={award.title} onChange={(val) => update(d => { const a = normalizeAward(d.awards![i]); a.title = val; d.awards![i] = a; })} isEditing={isEditing} />
+                    <span className="text-gray-400">|</span>
+                    <Editable tagName="span" className="text-gray-600" value={award.issuer || ''} onChange={(val) => update(d => { const a = normalizeAward(d.awards![i]); a.issuer = val; d.awards![i] = a; })} isEditing={isEditing} />
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    <Editable value={award.date || ''} onChange={(val) => update(d => { const a = normalizeAward(d.awards![i]); a.date = val; d.awards![i] = a; })} isEditing={isEditing} />
+                  </div>
+                  <RemoveButton onClick={() => update(d => d.awards!.splice(i, 1))} isEditing={isEditing} />
                 </div>
-                <div className="text-sm text-gray-600">
-                  <Editable value={award.date} onChange={(val) => update(d => d.awards![i].date = val)} isEditing={isEditing} />
-                </div>
-                <RemoveButton onClick={() => update(d => d.awards!.splice(i, 1))} isEditing={isEditing} />
-              </div>
-            ))}
+              );
+            })}
             <AddButton onClick={() => update(d => { if(!d.awards) d.awards=[]; d.awards.push(emptyAward) })} label="Add Award" isEditing={isEditing} />
           </div>
         </section>

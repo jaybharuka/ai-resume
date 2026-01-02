@@ -91,21 +91,39 @@ export const CustomSectionRenderer = ({
   onUpdate, 
   onDelete, 
   colorAccent,
-  isEditing 
+  isEditing,
+  className = "mb-6",
+  headerClassName = "mb-2 border-b pb-1",
+  titleClassName = "text-lg font-bold uppercase tracking-wider"
 }: { 
   section: NonNullable<ResumeData['customSections']>[0], 
   index: number, 
   onUpdate: (newSection: any) => void, 
   onDelete: () => void,
-  colorAccent: string,
-  isEditing: boolean
+  colorAccent?: string,
+  isEditing: boolean,
+  className?: string,
+  headerClassName?: string,
+  titleClassName?: string
 }) => {
+  // Type for detailed items
+  type DetailedItem = { name?: string; description?: string; date?: string; bullets?: string[] };
+  
+  // Items array might contain a mix of strings and objects due to data extraction
+  // Cast to any[] to handle mixed types at runtime
+  const rawItems: any[] = (section.items as any[]) || [];
+  const simpleItems: string[] = rawItems.filter((item): item is string => typeof item === 'string');
+  const objectItemsFromItems: DetailedItem[] = rawItems.filter((item): boolean => typeof item === 'object' && item !== null) as DetailedItem[];
+  
+  // Combine detailedItems with any objects found in items array
+  const detailedItems: DetailedItem[] = [...(section.detailedItems || []), ...objectItemsFromItems];
+  
   return (
-    <div className="mb-6 break-inside-avoid group/section">
-      <div className="flex items-center justify-between mb-2 border-b pb-1" style={{ borderColor: colorAccent }}>
+    <div className={`break-inside-avoid group/section ${className}`}>
+      <div className={`flex items-center justify-between ${headerClassName}`} style={{ borderColor: colorAccent }}>
         <Editable 
           tagName="h2" 
-          className="text-lg font-bold uppercase tracking-wider" 
+          className={titleClassName}
           style={{ color: colorAccent }}
           value={section.title} 
           onChange={(val) => onUpdate({ ...section, title: val })} 
@@ -113,76 +131,128 @@ export const CustomSectionRenderer = ({
         />
         <SectionControls onDelete={onDelete} isEditing={isEditing} />
       </div>
-      <div className="space-y-4">
-        {section.items.map((item, i) => (
-          <div key={i} className="relative group">
-            <div className="flex justify-between items-baseline">
-              <Editable tagName="h3" className="font-bold text-md" value={item.name} onChange={(val) => {
-                const newItems = [...section.items];
-                newItems[i] = { ...item, name: val };
+      
+      {/* Paragraph content */}
+      {section.content && (
+        <Editable 
+          tagName="p" 
+          className="text-gray-700 text-sm mb-2" 
+          value={section.content} 
+          onChange={(val) => onUpdate({ ...section, content: val })} 
+          isEditing={isEditing}
+        />
+      )}
+      
+      {/* Simple string items as bullet list */}
+      {simpleItems.length > 0 && (
+        <ul className="list-disc list-outside ml-5 space-y-1 text-gray-700 text-sm">
+          {simpleItems.map((item, i) => (
+            <li key={i} className="pl-1 relative group/item">
+              <Editable value={item} onChange={(val) => {
+                const newItems = [...simpleItems];
+                newItems[i] = val;
                 onUpdate({ ...section, items: newItems });
               }} isEditing={isEditing} />
-              <Editable className="text-sm text-gray-500" value={item.date} onChange={(val) => {
-                const newItems = [...section.items];
-                newItems[i] = { ...item, date: val };
-                onUpdate({ ...section, items: newItems });
+              {isEditing && (
+                <button 
+                  onClick={() => {
+                    const newItems = [...simpleItems];
+                    newItems.splice(i, 1);
+                    onUpdate({ ...section, items: newItems });
+                  }}
+                  className="absolute -left-5 top-0 text-red-300 hover:text-red-500 opacity-0 group-hover/item:opacity-100"
+                >
+                  <X size={10} />
+                </button>
+              )}
+            </li>
+          ))}
+          <AddButton onClick={() => {
+            const newItems = [...simpleItems, "New item"];
+            onUpdate({ ...section, items: newItems });
+          }} label="Add Item" isEditing={isEditing} />
+        </ul>
+      )}
+      
+      {/* Detailed items (legacy format) */}
+      {detailedItems.length > 0 && (
+        <div className="space-y-4">
+          {detailedItems.map((item, i) => (
+            <div key={i} className="relative group">
+              <div className="flex justify-between items-baseline">
+                <Editable tagName="h3" className="font-bold text-md" value={item.name} onChange={(val) => {
+                  const newItems = [...detailedItems];
+                  newItems[i] = { ...item, name: val };
+                  onUpdate({ ...section, detailedItems: newItems });
+                }} isEditing={isEditing} />
+                <Editable className="text-sm text-gray-500" value={item.date} onChange={(val) => {
+                  const newItems = [...detailedItems];
+                  newItems[i] = { ...item, date: val };
+                  onUpdate({ ...section, detailedItems: newItems });
+                }} isEditing={isEditing} />
+              </div>
+              <Editable tagName="p" className="text-gray-700 text-sm" value={item.description} onChange={(val) => {
+                  const newItems = [...detailedItems];
+                  newItems[i] = { ...item, description: val };
+                  onUpdate({ ...section, detailedItems: newItems });
+              }} isEditing={isEditing} />
+              
+              {item.bullets && item.bullets.length > 0 && (
+                 <ul className="list-disc list-outside ml-5 space-y-1 text-gray-700 text-sm mt-1">
+                   {item.bullets.map((bullet: string, j: number) => (
+                     <li key={j} className="pl-1 relative group/bullet">
+                       <Editable value={bullet} onChange={(val) => {
+                          const newItems = [...detailedItems];
+                          const newBullets = [...(item.bullets || [])];
+                          newBullets[j] = val;
+                          newItems[i] = { ...item, bullets: newBullets };
+                          onUpdate({ ...section, detailedItems: newItems });
+                       }} isEditing={isEditing} />
+                       {isEditing && (
+                          <button 
+                            onClick={() => {
+                              const newItems = [...detailedItems];
+                              const newBullets = [...(item.bullets || [])];
+                              newBullets.splice(j, 1);
+                              newItems[i] = { ...item, bullets: newBullets };
+                              onUpdate({ ...section, detailedItems: newItems });
+                            }}
+                            className="absolute -left-5 top-0 text-red-300 hover:text-red-500 opacity-0 group-hover/bullet:opacity-100"
+                          >
+                            <X size={10} />
+                          </button>
+                       )}
+                     </li>
+                   ))}
+                   <AddButton onClick={() => {
+                      const newItems = [...detailedItems];
+                      const newBullets = [...(item.bullets || [])];
+                      newBullets.push("New bullet");
+                      newItems[i] = { ...item, bullets: newBullets };
+                      onUpdate({ ...section, detailedItems: newItems });
+                   }} label="Add Bullet" isEditing={isEditing} />
+                 </ul>
+              )}
+              <RemoveButton onClick={() => {
+                  const newItems = [...detailedItems];
+                  newItems.splice(i, 1);
+                  onUpdate({ ...section, detailedItems: newItems });
               }} isEditing={isEditing} />
             </div>
-            <Editable tagName="p" className="text-gray-700 text-sm" value={item.description} onChange={(val) => {
-                const newItems = [...section.items];
-                newItems[i] = { ...item, description: val };
-                onUpdate({ ...section, items: newItems });
-            }} isEditing={isEditing} />
-            
-            {item.bullets && item.bullets.length > 0 && (
-               <ul className="list-disc list-outside ml-5 space-y-1 text-gray-700 text-sm mt-1">
-                 {item.bullets.map((bullet, j) => (
-                   <li key={j} className="pl-1 relative group/bullet">
-                     <Editable value={bullet} onChange={(val) => {
-                        const newItems = [...section.items];
-                        const newBullets = [...(item.bullets || [])];
-                        newBullets[j] = val;
-                        newItems[i] = { ...item, bullets: newBullets };
-                        onUpdate({ ...section, items: newItems });
-                     }} isEditing={isEditing} />
-                     {isEditing && (
-                        <button 
-                          onClick={() => {
-                            const newItems = [...section.items];
-                            const newBullets = [...(item.bullets || [])];
-                            newBullets.splice(j, 1);
-                            newItems[i] = { ...item, bullets: newBullets };
-                            onUpdate({ ...section, items: newItems });
-                          }}
-                          className="absolute -left-5 top-0 text-red-300 hover:text-red-500 opacity-0 group-hover/bullet:opacity-100"
-                        >
-                          <X size={10} />
-                        </button>
-                     )}
-                   </li>
-                 ))}
-                 <AddButton onClick={() => {
-                    const newItems = [...section.items];
-                    const newBullets = [...(item.bullets || [])];
-                    newBullets.push("New bullet");
-                    newItems[i] = { ...item, bullets: newBullets };
-                    onUpdate({ ...section, items: newItems });
-                 }} label="Add Bullet" isEditing={isEditing} />
-               </ul>
-            )}
-            <RemoveButton onClick={() => {
-                const newItems = [...section.items];
-                newItems.splice(i, 1);
-                onUpdate({ ...section, items: newItems });
-            }} isEditing={isEditing} />
-          </div>
-        ))}
+          ))}
+          <AddButton onClick={() => {
+              const newItems = [...detailedItems, { name: "New Item", description: "Description", date: "Date", bullets: [] }];
+              onUpdate({ ...section, detailedItems: newItems });
+          }} label="Add Item" isEditing={isEditing} />
+        </div>
+      )}
+      
+      {/* Show add button if no items at all */}
+      {simpleItems.length === 0 && detailedItems.length === 0 && (
         <AddButton onClick={() => {
-            const newItems = [...section.items];
-            newItems.push({ name: "New Item", description: "Description", date: "Date", bullets: [] });
-            onUpdate({ ...section, items: newItems });
+          onUpdate({ ...section, items: ["New item"] });
         }} label="Add Item" isEditing={isEditing} />
-      </div>
+      )}
     </div>
   );
 };

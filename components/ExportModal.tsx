@@ -5,10 +5,11 @@ interface ExportModalProps {
   onClose: () => void;
   onExportPDF: () => void;
   onExportDOCX: () => void;
+  onExportLaTeX: () => void;
   isExporting: boolean;
 }
 
-export default function ExportModal({ isOpen, onClose, onExportPDF, onExportDOCX, isExporting }: ExportModalProps) {
+export default function ExportModal({ isOpen, onClose, onExportPDF, onExportDOCX, onExportLaTeX, isExporting }: ExportModalProps) {
   if (!isOpen) return null;
 
   return (
@@ -58,6 +59,24 @@ export default function ExportModal({ isOpen, onClose, onExportPDF, onExportDOCX
             <div>
               <h3 className="font-semibold text-gray-800">Download as DOCX</h3>
               <p className="text-sm text-gray-500">Best for editing in Word</p>
+            </div>
+            {isExporting && <div className="ml-auto animate-spin h-5 w-5 border-2 border-blue-500 rounded-full border-t-transparent"></div>}
+          </button>
+
+          {/* LaTeX Option */}
+          <button
+            onClick={onExportLaTeX}
+            disabled={isExporting}
+            className="flex items-center p-4 border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all group text-left"
+          >
+            <div className="w-12 h-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center mr-4 group-hover:scale-110 transition-transform">
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+              </svg>
+            </div>
+            <div>
+              <h3 className="font-semibold text-gray-800">Open LaTeX Workspace</h3>
+              <p className="text-sm text-gray-500">Advanced editor for Pro users</p>
             </div>
             {isExporting && <div className="ml-auto animate-spin h-5 w-5 border-2 border-blue-500 rounded-full border-t-transparent"></div>}
           </button>

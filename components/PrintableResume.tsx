@@ -33,7 +33,7 @@ const PrintableResume = forwardRef<HTMLDivElement, PrintableResumeProps>(
           @media print {
             .printable-resume {
               margin: 0;
-              padding: 1in;
+              padding: 0;
               box-shadow: none;
               transform: none !important;
               zoom: 1 !important;

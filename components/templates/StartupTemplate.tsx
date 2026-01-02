@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { TemplateProps } from './types';
 import { ResumeData } from '@/types/resume';
 import { Editable, AddButton, RemoveButton, SectionControls, AddSectionButton, CustomSectionRenderer } from './TemplateComponents';
@@ -57,14 +57,14 @@ export default function StartupTemplate({ data, colorAccent, isEditing, onUpdate
               <SectionControls onDelete={() => update(d => d.skills = [])} isEditing={isEditing} />
             </div>
             <div className="flex flex-wrap gap-2">
-              {data.skills.map((skill, i) => (
+              {(data.skills || []).map((skill, i) => (
                 <div key={i} className="relative group">
                   <span className="bg-white px-3 py-1.5 rounded-lg text-xs font-bold text-gray-700 shadow-sm border border-gray-200 block">
-                    <Editable value={skill} onChange={(val) => update(d => d.skills[i] = val)} isEditing={isEditing} />
+                    <Editable value={skill} onChange={(val) => update(d => d.skills![i] = val)} isEditing={isEditing} />
                   </span>
                   {isEditing && (
                     <button 
-                      onClick={() => update(d => d.skills.splice(i, 1))}
+                      onClick={() => update(d => d.skills!.splice(i, 1))}
                       className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity w-3 h-3 flex items-center justify-center"
                     >
                       <X size={8} />
@@ -72,11 +72,11 @@ export default function StartupTemplate({ data, colorAccent, isEditing, onUpdate
                   )}
                 </div>
               ))}
-              <AddButton onClick={() => update(d => d.skills.push("New Skill"))} label="Add" isEditing={isEditing} />
+              <AddButton onClick={() => update(d => d.skills!.push("New Skill"))} label="Add" isEditing={isEditing} />
             </div>
           </div>
         )}
-        {(!data.skills.length) && <AddSectionButton label="Skills" onClick={() => update(d => d.skills = ["New Skill"])} isEditing={isEditing} />}
+        {(!data.skills?.length) && <AddSectionButton label="Skills" onClick={() => update(d => d.skills = ["New Skill"])} isEditing={isEditing} />}
 
         {/* Education */}
         {(data.education?.length || 0) > 0 && (
@@ -86,17 +86,17 @@ export default function StartupTemplate({ data, colorAccent, isEditing, onUpdate
               <SectionControls onDelete={() => update(d => d.education = [])} isEditing={isEditing} />
             </div>
             <div className="space-y-4">
-              {data.education.map((edu, i) => (
+              {(data.education || []).map((edu, i) => (
                 <div key={i} className="relative group">
-                  <Editable tagName="div" className="font-bold text-gray-800" value={edu.school} onChange={(val) => update(d => d.education[i].school = val)} isEditing={isEditing} />
-                  <Editable tagName="div" className="text-xs text-gray-500" value={edu.degree} onChange={(val) => update(d => d.education[i].degree = val)} isEditing={isEditing} />
+                  <Editable tagName="div" className="font-bold text-gray-800" value={edu.school} onChange={(val) => update(d => d.education![i].school = val)} isEditing={isEditing} />
+                  <Editable tagName="div" className="text-xs text-gray-500" value={edu.degree} onChange={(val) => update(d => d.education![i].degree = val)} isEditing={isEditing} />
                   <div className="text-xs text-gray-400 mt-1">
-                    <Editable value={edu.year} onChange={(val) => update(d => d.education[i].year = val)} isEditing={isEditing} />
+                    <Editable value={edu.year} onChange={(val) => update(d => d.education![i].year = val)} isEditing={isEditing} />
                   </div>
-                  <RemoveButton onClick={() => update(d => d.education.splice(i, 1))} className="text-red-400" isEditing={isEditing} />
+                  <RemoveButton onClick={() => update(d => d.education!.splice(i, 1))} className="text-red-400" isEditing={isEditing} />
                 </div>
               ))}
-              <AddButton onClick={() => update(d => d.education.push(emptyEducation))} label="Add Education" isEditing={isEditing} />
+              <AddButton onClick={() => update(d => d.education!.push(emptyEducation))} label="Add Education" isEditing={isEditing} />
             </div>
           </div>
         )}
@@ -133,26 +133,26 @@ export default function StartupTemplate({ data, colorAccent, isEditing, onUpdate
               <SectionControls onDelete={() => update(d => d.experience = [])} isEditing={isEditing} />
             </div>
             <div className="space-y-8">
-              {data.experience.map((exp, i) => (
+              {(data.experience || []).map((exp, i) => (
                 <div key={i} className="relative group pl-4 border-l-2 border-gray-100 hover:border-gray-200 transition-colors break-inside-avoid">
                   <div className="flex justify-between items-baseline mb-2">
-                    <Editable tagName="h3" className="text-xl font-bold text-gray-800" value={exp.role} onChange={(val) => update(d => d.experience[i].role = val)} isEditing={isEditing} />
+                    <Editable tagName="h3" className="text-xl font-bold text-gray-800" value={exp.role} onChange={(val) => update(d => d.experience![i].role = val)} isEditing={isEditing} />
                     <div className="text-sm font-bold text-gray-400 bg-gray-50 px-3 py-1 rounded-full">
-                      <Editable value={exp.startDate} onChange={(val) => update(d => d.experience[i].startDate = val)} isEditing={isEditing} /> - <Editable value={exp.endDate} onChange={(val) => update(d => d.experience[i].endDate = val)} isEditing={isEditing} />
+                      <Editable value={exp.startDate} onChange={(val) => update(d => d.experience![i].startDate = val)} isEditing={isEditing} /> - <Editable value={exp.endDate} onChange={(val) => update(d => d.experience![i].endDate = val)} isEditing={isEditing} />
                     </div>
                   </div>
                   <div className="text-lg font-medium text-gray-500 mb-3">
-                    <Editable value={exp.company} onChange={(val) => update(d => d.experience[i].company = val)} isEditing={isEditing} />
+                    <Editable value={exp.company} onChange={(val) => update(d => d.experience![i].company = val)} isEditing={isEditing} />
                   </div>
                   
                   <ul className="space-y-2 text-gray-600">
                     {exp.bullets.map((bullet, j) => (
                       <li key={j} className="relative group/bullet flex gap-3">
-                        <span className="text-lg leading-none" style={{ color: colorAccent }}>▸</span>
-                        <Editable value={bullet} onChange={(val) => update(d => d.experience[i].bullets[j] = val)} isEditing={isEditing} />
+                        <span className="text-lg leading-none" style={{ color: colorAccent }}>â–¸</span>
+                        <Editable value={bullet} onChange={(val) => update(d => d.experience![i].bullets[j] = val)} isEditing={isEditing} />
                         {isEditing && (
                           <button 
-                            onClick={() => update(d => d.experience[i].bullets.splice(j, 1))}
+                            onClick={() => update(d => d.experience![i].bullets.splice(j, 1))}
                             className="absolute -left-6 top-0 text-red-300 hover:text-red-500 opacity-0 group-hover/bullet:opacity-100"
                           >
                             <X size={10} />
@@ -160,16 +160,16 @@ export default function StartupTemplate({ data, colorAccent, isEditing, onUpdate
                         )}
                       </li>
                     ))}
-                    <AddButton onClick={() => update(d => d.experience[i].bullets.push("New achievement"))} label="Add Bullet" isEditing={isEditing} />
+                    <AddButton onClick={() => update(d => d.experience![i].bullets.push("New achievement"))} label="Add Bullet" isEditing={isEditing} />
                   </ul>
-                  <RemoveButton onClick={() => update(d => d.experience.splice(i, 1))} isEditing={isEditing} />
+                  <RemoveButton onClick={() => update(d => d.experience!.splice(i, 1))} isEditing={isEditing} />
                 </div>
               ))}
-              <AddButton onClick={() => update(d => d.experience.push(emptyExperience))} label="Add Experience" isEditing={isEditing} />
+              <AddButton onClick={() => update(d => d.experience!.push(emptyExperience))} label="Add Experience" isEditing={isEditing} />
             </div>
           </section>
         )}
-        {(!data.experience.length) && <AddSectionButton label="Experience" onClick={() => update(d => d.experience = [emptyExperience])} isEditing={isEditing} />}
+        {(!data.experience?.length) && <AddSectionButton label="Experience" onClick={() => update(d => d.experience = [emptyExperience])} isEditing={isEditing} />}
 
         {/* Projects */}
         {(data.projects?.length || 0) > 0 && (

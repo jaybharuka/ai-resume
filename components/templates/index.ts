@@ -6,6 +6,7 @@ import TechTemplate from './TechTemplate';
 import IvyTemplate from './IvyTemplate';
 import StartupTemplate from './StartupTemplate';
 import GlitchTemplate from './GlitchTemplate';
+import DeedyTemplate from './DeedyTemplate';
 
 export const templates = {
   'modern': ModernTemplate,
@@ -16,6 +17,7 @@ export const templates = {
   'ivy': IvyTemplate,
   'startup': StartupTemplate,
   'glitch': GlitchTemplate,
+  'deedy': DeedyTemplate,
 };
 
 export type TemplateName = keyof typeof templates;
